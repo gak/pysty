@@ -145,18 +145,33 @@ class Pysty:
 
     def _init_readline(self):
         
+        # settings for tab completion and reverse search
         if sys.platform == 'darwin':
             readline.parse_and_bind("bind ^I rl_complete")
             readline.parse_and_bind("bind ^r em-inc-search-prev")
         else:
             readline.parse_and_bind('tab: complete')
 
+        # completion
+        readline.set_completer(self._auto_complete)
+
+        # save/load history
         histfile = os.path.join(os.environ["HOME"], ".pysty_history")
         try:
             readline.read_history_file(histfile)
         except IOError:
             pass
         atexit.register(readline.write_history_file, histfile)
+
+    def _auto_complete(self, text, state):
+        methods = filter(lambda a: not a.startswith('_'), dir(self))
+        c = 0
+        for method in methods:
+            if method.startswith(text):
+                if state != c:
+                    c += 1
+                    continue
+                return method
 
     def loop(self):
         while 1:
