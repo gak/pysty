@@ -4,7 +4,8 @@ import urllib2
 import urlparse
 import cookielib
 import os
-
+import readline
+import atexit
 
 class Pysty:
 
@@ -22,6 +23,9 @@ class Pysty:
         # XXX: Hardcoded
         self._headers['Accept'] = 'application/json'
         self._headers['Content-Type'] = 'application/json'
+
+        # Readline
+        self._init_readline()
 
     def _sane_defaults(self):
         self._headers = {}
@@ -96,9 +100,15 @@ class Pysty:
     # Command Execution
     # -------------------------------------------------------------------------
 
-    def cli_execute(self, cmd):
+    def _cli_execute(self, cmd):
         command, args = self._split(cmd)
-        getattr(self, command.lower())(args)
+        try:
+            method = getattr(self, command.lower())
+        except AttributeError:
+            print('%(cmd)s not found' % locals())
+            return
+
+        method(args)
 
     # -------------------------------------------------------------------------
     # Commands
@@ -129,13 +139,36 @@ class Pysty:
     def delete(self, args):
         self._generic_request(args, 'DELETE')
 
+    # -------------------------------------------------------------------------
+    # Readline
+    # -------------------------------------------------------------------------
+
+    def _init_readline(self):
+        
+        if sys.platform == 'darwin':
+            readline.parse_and_bind("bind ^I rl_complete")
+            readline.parse_and_bind("bind ^r em-inc-search-prev")
+        else:
+            readline.parse_and_bind('tab: complete')
+
+        histfile = os.path.join(os.environ["HOME"], ".pysty_history")
+        try:
+            readline.read_history_file(histfile)
+        except IOError:
+            pass
+        atexit.register(readline.write_history_file, histfile)
+
+    def loop(self):
+        while 1:
+            self._cli_execute(raw_input('%s> ' % self._base_url))
+
 
 def main():
 
     base_url = sys.argv[1]
     pysty = Pysty(base_url)
-    while 1:
-        pysty.cli_execute(raw_input('%s> ' % base_url))
+    pysty.loop()
+
 
 if __name__ == '__main__': 
     main()    
