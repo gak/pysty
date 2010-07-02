@@ -6,6 +6,11 @@ import cookielib
 import os
 import readline
 import atexit
+import json
+
+from pygments import highlight
+from pygments.lexers import guess_lexer
+from pygments.formatters import TerminalFormatter
 
 class Pysty:
 
@@ -84,15 +89,7 @@ class Pysty:
         self._pretty_print(data)
 
     def _pretty_print(self, code):
-        try:
-            from pygments import highlight
-            from pygments.lexers import guess_lexer
-            from pygments.formatters import TerminalFormatter
-        except ImportError, e:
-            print e
-            print code
-            return
-
+        code = json.dumps(json.loads(code), indent=2)
         lexer = guess_lexer(code)
         print highlight(code, lexer, TerminalFormatter())
 
