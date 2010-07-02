@@ -18,7 +18,7 @@ class Pysty:
     # Initialisation
     # -------------------------------------------------------------------------
 
-    def __init__(self, base_url):
+    def __init__(self, base_url=None):
         self._sane_defaults()
         self._base_url = base_url
         self._cookiejar = cookielib.CookieJar()
@@ -119,6 +119,9 @@ class Pysty:
         for k, v in self._headers.items():
             print k, v
 
+    def server(self, args):
+        self._base_url = args
+
     def quit(self, args):
         sys.exit(0)
 
@@ -172,11 +175,18 @@ class Pysty:
 
     def loop(self):
         while 1:
-            self._cli_execute(raw_input('%s> ' % self._base_url))
+            if not self._base_url:
+                prompt = "[no server configured]";
+            else:
+                prompt = self._base_url
+
+            self._cli_execute(raw_input('%s> ' % prompt))
 
 
 def main():
-    base_url = sys.argv[1]
+    base_url = None
+    if len(sys.argv) == 2:
+        base_url = sys.argv[1]
     pysty = Pysty(base_url)
     pysty.loop()
 
