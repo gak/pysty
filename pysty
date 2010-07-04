@@ -9,7 +9,7 @@ import atexit
 import json
 import optparse
 
-import cfgparse
+import configopt
 from pygments import highlight
 from pygments.lexers import guess_lexer
 from pygments.formatters import TerminalFormatter
@@ -188,42 +188,28 @@ class Pysty:
 class Config:
 
     def __init__(self):
-        self._filename = os.path.join(os.environ["HOME"], ".pysty")
-        self._items = {}
+        self._opt = configopt.ConfigOpt()
         self.setup()
 
     def setup(self):
-        self._opt = optparse.OptionParser()
-        self._cfg = cfgparse.ConfigParser()
-        self._cfg.add_optparse_help_option(self._opt)
-        self._cfg_file_obj = self._cfg.add_file(self._filename)
+        self._opt.add_group('general', 'General Options')
+        self._opt.add_option('-s', '--server', group='general',
+                option='server', default=None,
+                help='Base URL for all requests')
 
-        # server
-        self._opt.add_option('--server', type='string',
-            help='Base URL for all requests')
-        self.server = self._cfg.add_option('server', default=None)
-        print self.server
-
-
-    def load(self):
-        self._items, args = self._cfg.parse(self._opt)
-        print self._items
-        print type(self._items)
-        print dir(self._items)
-        for k, v in self._items:
-            self._cfg_file_obj.set_option(k, v)
+    def parse(self):
+        self._opt()
 
     def save(self):
-        print 'writing', self._filename
-        self._cfg_file_obj.write(self._filename)
+        self._opt.save()
+
+    def __getattr__(self, attr):
+        return self._opt['general'][attr]
 
 def main():
 
     cfg = Config()
-    cfg.load()
-    cfg.save()
-    print cfg.server
-    cfg.server = 'weee'
+    cfg.parse()
     cfg.save()
 
     pysty = Pysty(cfg.server)
