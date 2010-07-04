@@ -86,7 +86,7 @@ class ConfigOptOption(object):
             return self.config_value
 
         return self._default
-    
+
     def _set_value(self, x):
         """Set the value of the variable. Used by the application to set a
         value for it."""
@@ -175,7 +175,7 @@ class ConfigOpt(object):
 
 
         self._config_name = os.path.expanduser(os.path.join('~', '.' +
-            app_name + '.ini'))
+            app_name))
         self._cmd_parser = OptionParser(option_class=ReferenceOption)
 
         self._cmd_parser.add_option('-c', '--config',
