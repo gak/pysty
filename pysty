@@ -7,10 +7,13 @@ import os
 import readline
 import atexit
 import json
+import optparse
 
+import cfgparse
 from pygments import highlight
 from pygments.lexers import guess_lexer
 from pygments.formatters import TerminalFormatter
+
 
 class Pysty:
 
@@ -182,12 +185,48 @@ class Pysty:
 
             self._cli_execute(raw_input('%s> ' % prompt))
 
+class Config:
+
+    def __init__(self):
+        self._filename = os.path.join(os.environ["HOME"], ".pysty")
+        self._items = {}
+        self.setup()
+
+    def setup(self):
+        self._opt = optparse.OptionParser()
+        self._cfg = cfgparse.ConfigParser()
+        self._cfg.add_optparse_help_option(self._opt)
+        self._cfg_file_obj = self._cfg.add_file(self._filename)
+
+        # server
+        self._opt.add_option('--server', type='string',
+            help='Base URL for all requests')
+        self.server = self._cfg.add_option('server', default=None)
+        print self.server
+
+
+    def load(self):
+        self._items, args = self._cfg.parse(self._opt)
+        print self._items
+        print type(self._items)
+        print dir(self._items)
+        for k, v in self._items:
+            self._cfg_file_obj.set_option(k, v)
+
+    def save(self):
+        print 'writing', self._filename
+        self._cfg_file_obj.write(self._filename)
 
 def main():
-    base_url = None
-    if len(sys.argv) == 2:
-        base_url = sys.argv[1]
-    pysty = Pysty(base_url)
+
+    cfg = Config()
+    cfg.load()
+    cfg.save()
+    print cfg.server
+    cfg.server = 'weee'
+    cfg.save()
+
+    pysty = Pysty(cfg.server)
     pysty.loop()
 
 
