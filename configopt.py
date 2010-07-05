@@ -6,8 +6,8 @@ import ConfigParser
 
 from optparse import OptionParser, OptionGroup, Option
 
-_true_values = ('True', 'true', 'Yes', 'yes')
-_false_values = ('False', 'false', 'No', 'no')
+_true_values = 'true', 'yes', 'on'
+_false_values = 'false', 'no', 'off'
 
 class ReferenceOption(Option):
     def __init__(self, *args, **kwargs):
@@ -227,10 +227,11 @@ class ConfigOpt(object):
 
                 value = config.get(section, option)
                 # Convert boolean values
-                if value in _true_values or value in _false_values:
-                    value = (value in _true_values)
+                if value.lower() in _true_values:
+                    value = True
+                elif value.lower() in _false_values:
+                    value = False
                 self._groups[section].options[option].config_value = value
-        return
 
     def save(self):
         """Save the config file."""
@@ -254,7 +255,6 @@ class ConfigOpt(object):
         config_file = file(self._config_name, 'w')
         config.write(config_file)
         config_file.close()
-        return
 
     def __call__(self):
         """Callable object, do the parsing of the command line and loads the
