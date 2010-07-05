@@ -87,8 +87,9 @@ class Pysty:
         except urllib2.HTTPError, f:
             print f
 
-        self._draw_line()
-        print(f.info())
+        if self._cfg.headers:
+            self._draw_line()
+            print(f.info())
 
         data = f.read()
 
@@ -129,6 +130,16 @@ class Pysty:
     def header_list(self, args):
         for k, v in self._headers.items():
             print k, v
+
+    def config_set(self, args):
+        key, value = args.split(' ')
+        self._cfg.set(key, value)
+
+    def config_get(self, args):
+        try:
+            print getattr(self._cfg, args)
+        except KeyError:
+            print 'Unknown config setting'
 
     def server(self, args):
         self._cfg.set('base_url', args)
@@ -194,6 +205,7 @@ class Pysty:
 
             self._cli_execute(raw_input('%s> ' % prompt))
 
+
 class Config:
 
     def __init__(self):
@@ -205,6 +217,9 @@ class Config:
         self._opt.add_option('-b', '--base-url', group='general',
                 option='base_url', default=None,
                 help='Base URL for all requests')
+        self._opt.add_option('--headers', group='general',
+                option='headers', default='off',
+                help='Show headers. Can be on or off. e.g. --headers=on')
 
     def parse(self):
         self._opt()
@@ -216,13 +231,16 @@ class Config:
         self._opt['general'][key] = val
 
     def __getattr__(self, key):
-        return self._opt['general'][key]
+        return self._opt['general'].options[key].config_value
 
 def main():
 
     cfg = Config()
     cfg.parse()
     cfg.save()
+
+    cfg = Config()  # XXX: This is a quick hack to make bools work
+    cfg.parse()
 
     pysty = Pysty(cfg)
     pysty.loop()
