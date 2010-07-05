@@ -8,6 +8,8 @@ import readline
 import atexit
 import json
 import optparse
+import gzip
+import StringIO
 
 import configopt
 from pygments import highlight
@@ -87,11 +89,17 @@ class Pysty:
         except urllib2.HTTPError, f:
             print f
 
+        # Print out the HTTP response headers
+        headers = f.info()
         if self._cfg.headers:
             self._draw_line()
-            print(f.info())
+            print(headers)
 
         data = f.read()
+
+        # Decompress if needed
+        if headers.get('content-encoding', None) == 'gzip':
+            data = gzip.GzipFile(fileobj=StringIO.StringIO(data)).read()
 
         self._draw_line()
         self._pretty_print(data)
