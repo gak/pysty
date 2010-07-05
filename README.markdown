@@ -3,28 +3,33 @@ Pysty
 
 A command line interface for working with RESTful services.
 
+Requirements
+------------
+ - Python 2.6
+ - pygments
+
+Features
+--------
+ - Readline support with tab-completion and reverse search history
+ - Automatic cookie session handling
+ - Syntax highlighting for all types of markup or data formats, e.g. JSON, HTML, etc.
+ - Pretty printing JSON
+ - Transparently decompress gzip responses
+
 Usage
 -----
+
     # pysty --base-url=http://api.stackoverflow.com
     http://api.stackoverflow.com> GET /0.9/questions
-    ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    GET http://api.stackoverflow.com/0.9/questions None
-    ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    --------------------------------------------------------------------------------
+    GET http://api.stackoverflow.com/0.9/questions
+    --------------------------------------------------------------------------------
     {
       "questions": [
         {
-          "view_count": 1,
-          "question_comments_url": "/questions/3177269/comments",
-          "tags": [
-            "ruby-on-rails"
-          ],
-          "community_owned": false,
           "title": "Even Spaced Primary / Secondary Columns in Rails",
-          "owner": {
-            "display_name": "Kevin Sylvestre",
-          },
-          "question_answers_url": "/questions/3177269/answers",
-          "question_id": 3177269
+          "question_id": 3177269,
+          ...
         },
         ...
       ]
@@ -33,8 +38,16 @@ Usage
 Once you set the base_url, it sticks for next time you run it:
 
     # pysty
-    http://api.stackoverflow.com>
+    http://api.stackoverflow.com> GET /0.9/questions
 
+By default, pysty sets some additional HTTP request headers for you:
 
+    > header_list
+    Content-Type application/json
+    Accept application/json
+
+But.. you can add/modify them to your needs:
+
+    > header_set Accept application/xml
 
 
