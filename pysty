@@ -21,23 +21,29 @@ class Pysty:
     # Initialisation
     # -------------------------------------------------------------------------
 
-    def __init__(self, base_url=None):
+    def __init__(self, cfg):
         self._sane_defaults()
-        self._base_url = base_url
+        self._cfg = cfg
         self._cookiejar = cookielib.CookieJar()
         self._opener = \
             urllib2.build_opener(urllib2.HTTPCookieProcessor(self._cookiejar))
 
-        # XXX: Hardcoded
-        self._headers['Accept'] = 'application/json'
-        self._headers['Content-Type'] = 'application/json'
-
-        # Readline
+        self._init_headers()
         self._init_readline()
+
+    def _init_headers(self):
+        self._hdr_path = os.path.expanduser(os.path.join('~', './pysty_headers'))
+        try:
+            self._headers = json.load(open(self._hdr_path))
+        except IOError:
+            self._headers['Accept'] = 'application/json'
+            self._headers['Content-Type'] = 'application/json'
+
+    def _save_headers(self):
+        json.dump(self._headers, open(self._hdr_path, 'w'))
 
     def _sane_defaults(self):
         self._headers = {}
-        self._base_url = None
         self._cookiejar = None
 
     # -------------------------------------------------------------------------
@@ -46,7 +52,7 @@ class Pysty:
 
     def _process_request(self, args):
         path, json = self._split(args)
-        full_url = urlparse.urljoin(self._base_url, path)
+        full_url = urlparse.urljoin(self._cfg.base_url, path)
         return full_url, json
 
     def _split(self, str):
@@ -81,10 +87,8 @@ class Pysty:
         except urllib2.HTTPError, f:
             print f
 
-        info = f.info()
-
         self._draw_line()
-        print(info)
+        print(f.info())
 
         data = f.read()
 
@@ -92,8 +96,11 @@ class Pysty:
         self._pretty_print(data)
 
     def _pretty_print(self, code):
-        code = json.dumps(json.loads(code), indent=2)
         lexer = guess_lexer(code)
+        try:
+            code = json.dumps(json.loads(code), indent=2)
+        except ValueError:
+            pass
         print highlight(code, lexer, TerminalFormatter())
 
     # -------------------------------------------------------------------------
@@ -117,15 +124,17 @@ class Pysty:
     def header_set(self, args):
         key, value = args.split(' ')
         self._headers[key] = value
+        self._save_headers()
 
     def header_list(self, args):
         for k, v in self._headers.items():
             print k, v
 
     def server(self, args):
-        self._base_url = args
+        self._cfg.set('base_url', args)
 
     def quit(self, args):
+        self._cfg.save()
         sys.exit(0)
 
     exit = quit
@@ -178,10 +187,10 @@ class Pysty:
 
     def loop(self):
         while 1:
-            if not self._base_url:
+            if not self._cfg.base_url:
                 prompt = "[no server configured]";
             else:
-                prompt = self._base_url
+                prompt = self._cfg.base_url
 
             self._cli_execute(raw_input('%s> ' % prompt))
 
@@ -193,8 +202,8 @@ class Config:
 
     def setup(self):
         self._opt.add_group('general', 'General Options')
-        self._opt.add_option('-s', '--server', group='general',
-                option='server', default=None,
+        self._opt.add_option('-b', '--base-url', group='general',
+                option='base_url', default=None,
                 help='Base URL for all requests')
 
     def parse(self):
@@ -203,8 +212,11 @@ class Config:
     def save(self):
         self._opt.save()
 
-    def __getattr__(self, attr):
-        return self._opt['general'][attr]
+    def set(self, key, val):
+        self._opt['general'][key] = val
+
+    def __getattr__(self, key):
+        return self._opt['general'][key]
 
 def main():
 
@@ -212,7 +224,7 @@ def main():
     cfg.parse()
     cfg.save()
 
-    pysty = Pysty(cfg.server)
+    pysty = Pysty(cfg)
     pysty.loop()
 
 
