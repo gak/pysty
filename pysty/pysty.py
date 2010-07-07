@@ -14,6 +14,7 @@ import StringIO
 import configopt
 from pygments import highlight
 from pygments.lexers import guess_lexer
+from pygments.lexers import JavascriptLexer, XmlLexer
 from pygments.formatters import TerminalFormatter
 
 
@@ -72,7 +73,7 @@ class Pysty:
         except:
             columns = 80
 
-        print '-' * int(columns)
+        print('-' * int(columns))
 
     def _generic_request(self, args, method):
         url, json = self._process_request(args)
@@ -80,37 +81,56 @@ class Pysty:
 
     def _send_request(self, method, url, data):
         self._draw_line()
-        print '%(method)s %(url)s %(data)s' % locals()
+        print('%(method)s %(url)s %(data)s' % locals())
         request = urllib2.Request(url, data=data, headers=self._headers)
         request.get_method = lambda: method
 
         try:
             f = self._opener.open(request)
         except urllib2.HTTPError, f:
-            print f
+            print(f)
+
+        headers = f.info()
+        data = f.read()
+
+        self._process_response_headers(headers)
+        data = self._process_response_data(headers, data)
+        self._display_processed_data(headers, data)
+
+    def _process_response_headers(self, headers):
 
         # Print out the HTTP response headers
-        headers = f.info()
         if self._cfg.headers:
             self._draw_line()
             print(headers)
 
-        data = f.read()
+    def _process_response_data(self, headers, data):
 
         # Decompress if needed
         if headers.get('content-encoding', None) == 'gzip':
             data = gzip.GzipFile(fileobj=StringIO.StringIO(data)).read()
 
-        self._draw_line()
-        self._pretty_print(data)
+        return data
 
-    def _pretty_print(self, code):
-        lexer = guess_lexer(code)
-        try:
+    def _display_processed_data(self, headers, data):
+        self._draw_line()
+        self._pretty_print(headers, data)
+
+    def _get_lexer_from_content_type(self, content_type):
+        if content_type.find('text/json') != -1:
+            return JavascriptLexer()
+
+    def _pretty_print(self, headers, code):
+        content_type = headers['content-type']
+        lexer = self._get_lexer_from_content_type(content_type)
+
+        if not lexer:
+            lexer = guess_lexer(code)
+
+        if isinstance(lexer, JavascriptLexer):
             code = json.dumps(json.loads(code), indent=2)
-        except ValueError:
-            pass
-        print highlight(code, lexer, TerminalFormatter())
+
+        print(highlight(code, lexer, TerminalFormatter()))
 
     # -------------------------------------------------------------------------
     # Command Execution
@@ -137,7 +157,13 @@ class Pysty:
 
     def header_list(self, args):
         for k, v in self._headers.items():
-            print k, v
+            print('%s: %s' % (k, v))
+
+    def header_unset(self, args):
+        try:
+            del self._headers[args]
+        except KeyError:
+            print('Header is not set')
 
     def config_set(self, args):
         key, value = args.split(' ')
@@ -145,15 +171,16 @@ class Pysty:
 
     def config_get(self, args):
         try:
-            print getattr(self._cfg, args)
+            print(getattr(self._cfg, args))
         except KeyError:
-            print 'Unknown config setting'
+            print('Unknown config setting')
 
     def server(self, args):
         self._cfg.set('base_url', args)
 
     def quit(self, args):
         self._cfg.save()
+        self._save_headers()
         sys.exit(0)
 
     exit = quit
