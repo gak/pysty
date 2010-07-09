@@ -10,6 +10,7 @@ import json
 import optparse
 import gzip
 import StringIO
+import commands
 
 import configopt
 from pygments import highlight
@@ -201,17 +202,29 @@ class Pysty:
     # Readline
     # -------------------------------------------------------------------------
 
+    def _is_using_libedit(self):
+        if sys.platform == 'darwin':
+            (status, result) = commands.getstatusoutput(
+                "otool -L %s | grep libedit" % readline.__file__)
+            if status == 0 and len(result) > 0:
+                return True
+
+    def _init_gnu_readline(self):
+        readline.parse_and_bind('tab: complete')
+        if self._cfg.vi_mode:
+            readline.parse_and_bind('set editing-mode vi')
+
+    def _init_libedit(self):
+        readline.parse_and_bind("bind ^I rl_complete")
+        readline.parse_and_bind("bind ^r em-inc-search-prev")
+
     def _init_readline(self):
 
         # settings for tab completion and reverse search
-        if sys.platform == 'darwin':
-            readline.parse_and_bind("bind ^I rl_complete")
-            readline.parse_and_bind("bind ^r em-inc-search-prev")
+        if self._is_using_libedit():
+            self._init_libedit()
         else:
-            readline.parse_and_bind('tab: complete')
-
-        if self._cfg.vi_mode:
-            readline.parse_and_bind('set editing-mode vi')
+            self._init_gnu_readline()
 
         # completion
         readline.set_completer(self._auto_complete)
