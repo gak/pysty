@@ -8,6 +8,13 @@ Requirements
  - Python 2.6
  - pygments
 
+Note for OS X
+-------------
+A small hack for using GNU readline instead of libedit in OS X:
+
+    # sudo easy_install install readline
+    # export PYTHONPATH=/Library/Python/2.6/site-packages
+
 Features
 --------
  - Supports GET, POST, PUT and DELETE
