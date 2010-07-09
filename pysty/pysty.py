@@ -210,6 +210,9 @@ class Pysty:
         else:
             readline.parse_and_bind('tab: complete')
 
+        if self._cfg.vi_mode:
+            readline.parse_and_bind('set editing-mode vi')
+
         # completion
         readline.set_completer(self._auto_complete)
 
@@ -255,6 +258,9 @@ class Config:
         self._opt.add_option('--headers', group='general',
                 option='headers', default='off',
                 help='Show headers. Can be on or off. e.g. --headers=on')
+        self._opt.add_option('--vi-editing-mode', group='general',
+                option='vi_mode', default='off',
+                help='User vi for editing-mode in readline')
 
     def parse(self):
         self._opt()
