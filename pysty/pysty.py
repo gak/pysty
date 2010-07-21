@@ -56,6 +56,12 @@ class Pysty:
 
     def _process_request(self, args):
         path, json = self._split(args)
+
+        # @ prefixed means a file is used instead of some json
+        if json.startswith('@'):
+            json_fname = json[1:]
+            json = open(json_fname, 'rb').read()
+
         full_url = urlparse.urljoin(self._cfg.base_url, path)
         return full_url, json
 
