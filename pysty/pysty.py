@@ -58,7 +58,7 @@ class Pysty:
         path, json = self._split(args)
 
         # @ prefixed means a file is used instead of some json
-        if json.startswith('@'):
+        if json and json.startswith('@'):
             json_fname = json[1:]
             json = open(json_fname, 'rb').read()
 
@@ -103,6 +103,10 @@ class Pysty:
         self._process_response_headers(headers)
         data = self._process_response_data(headers, data)
         self._display_processed_data(headers, data)
+
+        self._last_data = data
+        self._last_headers = headers
+        self._last_json = json.loads(data)
 
     def _process_response_headers(self, headers):
 
@@ -203,6 +207,18 @@ class Pysty:
 
     def delete(self, args):
         self._generic_request(args, 'DELETE')
+
+    def ip(self, args):
+        '''Go into ipython with the last response data'''
+        data = {
+            'data': self._last_data,
+            'json': self._last_json,
+            'headers': self._last_headers,
+            'p': self,
+        }
+        import IPython.ipapi
+        IPython.ipapi.launch_new_instance(data)
+
 
     # -------------------------------------------------------------------------
     # Readline
