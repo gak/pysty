@@ -15,7 +15,7 @@ import commands
 import configopt
 from pygments import highlight
 from pygments.lexers import guess_lexer
-from pygments.lexers import JavascriptLexer, XmlLexer
+from pygments.lexers import JavascriptLexer, XmlLexer, PerlLexer
 from pygments.formatters import TerminalFormatter
 
 
@@ -88,7 +88,9 @@ class Pysty:
 
     def _send_request(self, method, url, data):
         self._draw_line()
-        print('%(method)s %(url)s %(data)s' % locals())
+        print('%(method)s %(url)s' % locals())
+        if data:
+            self._pretty_print(data)
         request = urllib2.Request(url, data=data, headers=self._headers)
         request.get_method = lambda: method
 
@@ -125,21 +127,24 @@ class Pysty:
 
     def _display_processed_data(self, headers, data):
         self._draw_line()
-        self._pretty_print(headers, data)
+        self._pretty_print(data, headers)
 
     def _get_lexer_from_content_type(self, content_type):
         if content_type.find('text/json') != -1:
             return JavascriptLexer()
 
-    def _pretty_print(self, headers, code):
-        content_type = headers['content-type']
-        lexer = self._get_lexer_from_content_type(content_type)
+    def _pretty_print(self, code, headers=None, lexer=None):
+        if not lexer and headers:
+            content_type = headers['content-type']
+            lexer = self._get_lexer_from_content_type(content_type)
 
         if not lexer:
             lexer = guess_lexer(code)
 
-        if isinstance(lexer, JavascriptLexer):
+        try:
             code = json.dumps(json.loads(code), indent=2)
+        except ValueError, e:
+            pass
 
         print(highlight(code, lexer, TerminalFormatter()))
 
