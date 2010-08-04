@@ -108,7 +108,10 @@ class Pysty:
 
         self._last_data = data
         self._last_headers = headers
-        self._last_json = json.loads(data)
+        try:
+            self._last_json = json.loads(data)
+        except ValueError:
+            self._last_json = None
 
     def _process_response_headers(self, headers):
 
