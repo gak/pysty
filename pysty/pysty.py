@@ -312,7 +312,7 @@ class Config:
         self._opt.save()
 
     def set(self, key, val):
-        self._opt['general'][key] = val
+        self._opt['general'].options[key].config_value = val
 
     def __getattr__(self, key):
         return self._opt['general'].options[key].config_value
