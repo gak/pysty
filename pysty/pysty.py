@@ -227,6 +227,10 @@ class Pysty:
         import IPython.ipapi
         IPython.ipapi.launch_new_instance(data)
 
+    def save(self, args):
+        '''Save the previous output into a file'''
+        open(args, 'wb').write(str(self._last_data))
+        print 'Written %i bytes to %s' % (len(self._last_data), args)
 
     # -------------------------------------------------------------------------
     # Readline
